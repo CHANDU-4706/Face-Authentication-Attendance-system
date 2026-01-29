@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environment
+.venv/
+venv/
+
+# Project Runtime Data (Local only)
+dataset/
+attendance.db
+trainer.yml
+
+# IDE
+.vscode/
+.idea/
