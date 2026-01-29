@@ -249,7 +249,7 @@ class AppUI:
                         # Debugging: Print confidence to console
                         print(f"DEBUG: ID={user_id}, Conf={conf}") 
                         
-                        if conf < 100 and user_id is not None:  # RELAXED THRESHOLD from 85 to 100 for easier recognition
+                        if conf < 85 and user_id is not None:  # RELAXED THRESHOLD from 70 to 85
                             name = self.user_map.get(user_id, "Register First")
                             color = (0, 255, 0)
                             

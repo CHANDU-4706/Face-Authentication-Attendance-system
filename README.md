@@ -12,6 +12,20 @@ An intelligent, AI-driven attendance system that uses Facial Recognition and Liv
 - **Startup Diagnostics**: Automatically verifies database integrity and model existence on launch, logging status to the terminal.
 - **Local Data Persistence**: All user profiles and time logs are securely stored in a local `sqlite3` database, ensuring data privacy and reliability.
 
+## 📸 System in Action
+
+### 1. Active Liveness Challenge
+![Liveness Challenge](assets/liveness_challenge.png)
+*The system randomly asks for actions (e.g., Turn Left) to verify the user is real.*
+
+### 2. Verified & Cooldown
+![Verified State](assets/verified_cooldown.png)
+*Once verified, actions are enabled. The system also tracks cooldowns to prevent double-punches.*
+
+### 3. Terminal Diagnostics
+![Diagnostics](assets/terminal_diagnostics.png)
+*Real-time diagnostics and confidence logging in the terminal.*
+
 ## 🧠 Technical Architecture & Models
 This project prioritizes **efficiency** and **deployability** over heavy hardware requirements.
 

@@ -24,6 +24,8 @@ To ensure valid inputs, the system strictly follows a state-based workflow:
     - Only *after* the full sequence is passed, the **Punch In** and **Punch Out** buttons become active.
     - A **30-second cooldown** is enforced between punches to prevent spamming.
 
+![Verified State](assets/verified_cooldown.png)
+
 ### B. Punch In / Punch Out
 - **Punch In**: Logs the entry time. System checks for cooldowns (preventing double punches within 60s).
 - **Punch Out**: Logs the exit time.
@@ -58,6 +60,9 @@ We implement **Active Liveness Detection** (Challenge-Response) to prevent sophi
     1.  **"Blink"**: Detected via Eye Aspect Ratio (EAR).
     2.  **"Smile"**: Detected via Mouth Aspect Ratio (MAR) using lips landmarks.
     3.  **"Turn Left" / "Turn Right"**: Detected via Head Pose Estimation (Yaw) by comparing the relative distance of the nose tip to cheek/ear landmarks.
+
+![Liveness Challenge](assets/liveness_challenge.png)
+
 - **Liveness Stability**: A 30-frame (approx. 1 second) buffer prevents the system from resetting the "Verified" state if the user's face is briefly lost or unrecognized during a challenge.
 - **Why Active?**: Passive blinking can sometimes be spoofed by a video. Random challenges require real-time interaction, making it extremely difficult to spoof with static photos or pre-recorded videos.
 
