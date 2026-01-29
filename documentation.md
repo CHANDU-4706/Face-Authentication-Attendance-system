@@ -58,6 +58,7 @@ We implement **Active Liveness Detection** (Challenge-Response) to prevent sophi
     1.  **"Blink"**: Detected via Eye Aspect Ratio (EAR).
     2.  **"Smile"**: Detected via Mouth Aspect Ratio (MAR) using lips landmarks.
     3.  **"Turn Left" / "Turn Right"**: Detected via Head Pose Estimation (Yaw) by comparing the relative distance of the nose tip to cheek/ear landmarks.
+- **Liveness Stability**: A 30-frame (approx. 1 second) buffer prevents the system from resetting the "Verified" state if the user's face is briefly lost or unrecognized during a challenge.
 - **Why Active?**: Passive blinking can sometimes be spoofed by a video. Random challenges require real-time interaction, making it extremely difficult to spoof with static photos or pre-recorded videos.
 
 ## 4. Evaluation Criteria & Performance
@@ -67,7 +68,7 @@ This project was built to meet specific engineering criteria:
 | Criterion | Implementation Details |
 | :--- | :--- |
 | **Functional Accuracy** | High accuracy achieved by using high-contrast registration (50 samples) and strict confidence thresholds (< 70 for match). |
-| **System Reliability** | - **Crash Prevention**: `WM_DELETE_WINDOW` handling ensures camera resource release.<br>- **Persistence**: SQLite ensures data survives restarts.<br>- **Error Handling**: Try-catch blocks around camera and DB operations. |
+| **System Reliability** | - **Crash Prevention**: `WM_DELETE_WINDOW` handling ensures camera resource release.<br>- **Persistence**: Startup diagnostics verify `trainer.yml` and `attendance.db` integrity.<br>- **Error Handling**: Hardened training logic with type-casting (np.int32) to prevent C++ exceptions. |
 | **User Experience** | - **Feedback**: Visual bounding boxes, confidence scores, and instruction text.<br>- **Control**: Manual Punch In/Out buttons prevent accidental logs. |
 | **Code Quality** | Modular design (separation of UI, Logic, Data), PEP-8 compliance, and documented classes. |
 

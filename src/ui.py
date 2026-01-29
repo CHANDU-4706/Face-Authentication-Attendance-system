@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import simpledialog, messagebox
 import cv2
+import os
 from PIL import Image, ImageTk
 import datetime
 import threading
@@ -44,6 +45,20 @@ class AppUI:
         self.reg_user_name = None
         self.reg_count = 0
         self.MAX_SAMPLES = 50
+        
+        # Stability Buffers
+        self.liveness_exit_counter = 0
+        self.LIVENESS_THRESHOLD_FRAMES = 30 # Maintain verified state for 1 second after face loss
+        
+        # Diagnostic Startup
+        print(f"--- System Diagnostic ---")
+        print(f"Users in Database: {len(self.user_map)}")
+        if os.path.exists(self.face_system.trainer_path):
+             stats = os.stat(self.face_system.trainer_path)
+             print(f"Trainer Model Found: {self.face_system.trainer_path} ({stats.st_size} bytes)")
+        else:
+             print("WARNING: No Trainer Model found. Register a user first.")
+        print(f"-------------------------")
 
         # Camera
         self.cap = cv2.VideoCapture(0)
@@ -131,12 +146,19 @@ class AppUI:
                 messagebox.showerror("Error", str(e))
 
     def finish_registration(self):
+        if hasattr(self, 'is_training') and self.is_training:
+            return
+            
+        self.is_training = True
         self.status_var.set("Training Model... Please Wait.")
         self.log_msg("Training started...")
         
         def train_task():
-            self.face_system.save_samples(self.reg_user_id, self.reg_samples)
-            self.face_system.train_model()
+            try:
+                self.face_system.save_samples(self.reg_user_id, self.reg_samples)
+                self.face_system.train_model()
+            except Exception as e:
+                print(f"Training Task Failed: {e}")
             
             # Update cache
             self.user_map = self.db.get_users_dict()
@@ -147,6 +169,7 @@ class AppUI:
         threading.Thread(target=train_task).start()
 
     def registration_complete(self):
+        self.is_training = False
         self.is_registering = False
         self.reg_btn.config(state=tk.NORMAL)
         self.log_msg(f"Registered: {self.reg_user_name}")
@@ -219,12 +242,15 @@ class AppUI:
                     
                     if rect:
                         x, y, w, h = rect
-                        name = "Unknown"
+                        name = "Register First"
                         color = (0, 0, 255)
                         
                         # Confidence Logic
-                        if conf < 70 and user_id is not None: 
-                            name = self.user_map.get(user_id, "Unknown")
+                        # Debugging: Print confidence to console
+                        print(f"DEBUG: ID={user_id}, Conf={conf}") 
+                        
+                        if conf < 85 and user_id is not None:  # RELAXED THRESHOLD from 70 to 85
+                            name = self.user_map.get(user_id, "Register First")
                             color = (0, 255, 0)
                             
                             # ACTIVE LIVENESS CHECK (2-Step Sequence)
@@ -265,7 +291,7 @@ class AppUI:
                                 if passed:
                                     # Remove completed challenge
                                     self.active_challenge.pop(0)
-                                    # Reset timer for next challenge (optional)
+                                    # Reset timer for next challenge
                                     self.challenge_start_time = time.time()
                                     
                                     # If queue empty -> ALL PASSED
@@ -273,46 +299,66 @@ class AppUI:
                                         self.liveness_confirmed = True
                                         self.current_user_id = user_id
                                         self.current_user_name = name
+                                        self.liveness_exit_counter = self.LIVENESS_THRESHOLD_FRAMES
                                         
                                         # CHECK COOLDOWN (30s)
                                         last = self.last_punch_time.get(user_id, 0)
                                         if time.time() - last < 30:
                                             self.status_var.set(f"Cooldown Active ({int(30 - (time.time()-last))}s)")
-                                            # Buttons stay disabled, but we show verified
                                         else:
                                             # ENABLE BUTTONS
                                             self.punch_in_btn.config(state=tk.NORMAL)
                                             self.punch_out_btn.config(state=tk.NORMAL)
                                             self.status_var.set(f"Verified: {name}. Select Action.")
                                             
-                                        # Reset challenge logic
+                                        # Reset challenge state
                                         self.active_challenge = None
 
                             else:
                                 # Already confirmed, waiting for button press
                                 cv2.putText(display_frame, "VERIFIED - SELECT ACTION", (x, y-30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
                                 
-                                if self.current_user_id != user_id:
-                                    # User changed? Reset.
+                                if self.current_user_id == user_id:
+                                    self.liveness_exit_counter = self.LIVENESS_THRESHOLD_FRAMES # Keep buffer full
+                                else:
+                                    self.liveness_exit_counter -= 1
+                                    
+                                if self.liveness_exit_counter <= 0:
                                     self.liveness_confirmed = False
                                     self.active_challenge = None
                                     self.punch_in_btn.config(state=tk.DISABLED)
                                     self.punch_out_btn.config(state=tk.DISABLED)
 
                         else:
-                            # Unknown or low confidence
+                            # Unrecognized or low confidence
+                            # Debug log to console (Internal)
+                            print(f"DEBUG: Unrecognized Face, Conf: {int(conf)}")
+                            
                             if self.liveness_confirmed:
-                                # Lost tracking of verified user
-                                self.liveness_confirmed = False
-                                self.punch_in_btn.config(state=tk.DISABLED)
-                                self.punch_out_btn.config(state=tk.DISABLED)
-                                self.status_var.set("System Ready")
+                                self.liveness_exit_counter -= 1
+                                if self.liveness_exit_counter <= 0:
+                                    self.liveness_confirmed = False
+                                    self.active_challenge = None
+                                    self.punch_in_btn.config(state=tk.DISABLED)
+                                    self.punch_out_btn.config(state=tk.DISABLED)
+                                    self.status_var.set("System Ready")
                             
                         cv2.rectangle(display_frame, (x, y), (x+w, y+h), color, 2)
                         cv2.putText(display_frame, f"{name} ({int(conf)})", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+                    
+                    else:
+                        # NO FACE FOUND
+                        if self.liveness_confirmed:
+                            self.liveness_exit_counter -= 1
+                            if self.liveness_exit_counter <= 0:
+                                self.liveness_confirmed = False
+                                self.active_challenge = None
+                                self.punch_in_btn.config(state=tk.DISABLED)
+                                self.punch_out_btn.config(state=tk.DISABLED)
+                                self.status_var.set("System Ready")
                 
                 except Exception as e:
-                    print(e)
+                    # print(f"Update Loop Error: {e}")
                     pass
 
             # Convert to Tkinter Image

@@ -90,13 +90,23 @@ class FaceSystem:
                 for file_name in os.listdir(user_dir):
                     if file_name.endswith("jpg"):
                         path = os.path.join(user_dir, file_name)
-                        face = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-                        if face is not None:
-                            faces.append(face)
-                            ids.append(uid)
+                        try:
+                            # Verify file size
+                            if os.path.getsize(path) == 0:
+                                continue
+                                
+                            face = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+                            if face is not None and face.size > 0:
+                                # Resize validation if needed, but usually LBPH handles it if consistent
+                                faces.append(face)
+                                ids.append(uid)
+                        except Exception:
+                            continue
             
             if faces:
-                 self.recognizer.train(faces, np.array(ids))
+                 # Explicitly cast IDs to int32 to avoid OpenCV C++ errors
+                 ids_np = np.array(ids, dtype=np.int32)
+                 self.recognizer.train(faces, ids_np)
                  self.recognizer.write(self.trainer_path)
                  print("Training complete and saved.")
             else:

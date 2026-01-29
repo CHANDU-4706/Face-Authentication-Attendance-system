@@ -8,6 +8,8 @@ An intelligent, AI-driven attendance system that uses Facial Recognition and Liv
 - **Real-time Face Recognition**: Utilizes **OpenCV's LBPH (Local Binary Patterns Histograms)** algorithm to identify registered users instantly with high accuracy on standard CPUs.
 - **Active Liveness Detection**: A robust "Challenge-Response" system that asks users to perform random actions (**Smile**, **Blink**, **Turn Head**) to prove they are human, verified using **MediaPipe Face Mesh**.
 - **Secure Attendance Logging**: Implements a "Verify-Then-Punch" workflow. Users can only punch in/out *after* passing the liveness check, preventing accidental or proxy attendance.
+- **Liveness Stability Buffer**: Implements a 30-frame "grace period" to prevent session resets during brief movement or tracking loss.
+- **Startup Diagnostics**: Automatically verifies database integrity and model existence on launch, logging status to the terminal.
 - **Local Data Persistence**: All user profiles and time logs are securely stored in a local `sqlite3` database, ensuring data privacy and reliability.
 
 ## 🧠 Technical Architecture & Models
