@@ -5,7 +5,7 @@ This project is an **AI-powered Biometric Attendance System** designed to solve 
 
 The system is built using a modular architecture:
 - **`src.face_core`**: Handles face detection (MediaPipe) and recognition (LBPH).
-- **`src.liveness`**: Computes Eye Aspect Ratio (EAR) to detect blinking.
+- **`src.liveness`**: Computes EAR (Blink), MAR (Smile), and Head Orientation (Yaw) for liveness checks.
 - **`src.storage`**: Manages the SQLite database for users and logs.
 - **`src.ui`**: The Tkinter-based frontend that orchestrates the workflow.
 
@@ -15,13 +15,14 @@ The system is built using a modular architecture:
 To ensure valid inputs, the system strictly follows a state-based workflow:
 1.  **Face Detection**: The camera continuously scans for faces.
 2.  **Recognition**: If a face is found, the **LBPH Face Recognizer** attempts to match it against the registered dataset.
-3.  **Liveness Challenge**:
+3.  **Active Liveness Challenge**:
     - Even if recognized, the system **blocks** any action.
-    - The user is prompted to "Blink to Verify".
-    - The system tracks eye landmarks and calculates EAR. A significant drop and rise in EAR signifies a blink.
+    - The system issues a **Randomized 2-Step Challenge** (e.g., "Step 1: Smile" -> "Step 2: Turn Left").
+    - The user must perform these actions in sequence.
+    - **MediaPipe Face Mesh** tracks landmarks (Eyes, Lips, Head Pose) to verify each step.
 4.  **Action Authorization**:
-    - Only *after* a confirmed blink, the **Punch In** and **Punch Out** buttons become active (Green/Orange).
-    - This ensures that a real human is present and conscious of the action.
+    - Only *after* the full sequence is passed, the **Punch In** and **Punch Out** buttons become active.
+    - A **30-second cooldown** is enforced between punches to prevent spamming.
 
 ### B. Punch In / Punch Out
 - **Punch In**: Logs the entry time. System checks for cooldowns (preventing double punches within 60s).
@@ -71,6 +72,5 @@ This project was built to meet specific engineering criteria:
 | **Code Quality** | Modular design (separation of UI, Logic, Data), PEP-8 compliance, and documented classes. |
 
 ## 5. Future Scope
-- **Active Liveness**: Challenge-response (e.g., "Turn Left", "Smile").
 - **Cloud Sync**: Uploading `attendance.db` logs to a central server.
 - **Encryption**: Encrypting the `dataset` folder to protect user privacy.

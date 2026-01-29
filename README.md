@@ -60,7 +60,8 @@ This project prioritizes **efficiency** and **deployability** over heavy hardwar
     - Wait for the "Training Complete" message.
 3.  **Mark Attendance**:
     - Look at the camera.
-    - **Blink** blindly to pass the liveness check.
+    - **Follow the Challenges**: The system will ask you to (e.g., "Smile", "Turn Left").
+    - Complete the **2-Step Sequence** to prove you are human.
     - Once "Verified", click **PUNCH IN** or **PUNCH OUT**.
     - Your attendance is now saved in `attendance.db`.
 
@@ -69,7 +70,7 @@ This project prioritizes **efficiency** and **deployability** over heavy hardwar
 Face Authenticator/
 ├── src/
 │   ├── face_core.py    # Face detection & recognition logic
-│   ├── liveness.py     # Blink detection (EAR calculation)
+│   ├── liveness.py     # Active Liveness (Blink, Smile, Turn detection)
 │   ├── storage.py      # Database operations
 │   └── ui.py           # GUI (Tkinter)
 ├── dataset/            # Stores user face images
